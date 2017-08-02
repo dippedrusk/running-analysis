@@ -48,33 +48,26 @@ def get_data(inputdata):
 
 def distance(data): # returns distance in m
     
-    nextdata = pd.DataFrame([data['lat'],data['lon']], ["nextlat", "nextlon"]).transpose().shift(periods=-1, axis=0)
+    nextdata = pd.DataFrame([data['lat'], data['lon'], data['time']], ["nextlat", "nextlon","nexttime"])
+    nextdata = nextdata.transpose().shift(periods=-1, axis=0)
     data = pd.concat([data, nextdata], axis=1)
     
-    data['distbetween'] = data.apply(distancebetween2points, axis=1)
-    totaldistance = pd.DataFrame.sum(data, axis=0)
-    return totaldistance['distbetween']
-
-def radify(number):
-    return number * math.pi / 180
-    
-def distancebetween2points(data): # returns distance in m
-    radius = 6371000
-    
-    lat = radify(data['lat'])
-    lon = radify(data['lon'])
-    nextlat = radify(data['nextlat'])
-    nextlon = radify(data['nextlon'])
+    radius=6371000
+    lat = radify(data['lat']).astype(np.float64)
+    lon = radify(data['lon']).astype(np.float64)
+    nextlat = radify(data['nextlat']).astype(np.float64)
+    nextlon = radify(data['nextlon']).astype(np.float64)
     
     a = 2*radius
-    
-    b = (math.sin((nextlat-lat)/2))**2
-    
-    c = math.cos(lat)*math.cos(nextlat)*((nextlon-lon)/2)**2
-    
-    dist = a*math.asin(math.sqrt(b+c))
-    
-    return dist
+    b = (np.sin((nextlat-lat)/2))**2
+    c = np.cos(lat) * np.cos(nextlat) * ((nextlon-lon)/2)**2
+
+    data['distbetween'] = a*np.arcsin(np.sqrt(b+c))
+    totaldistance = pd.DataFrame.sum(data['distbetween'], axis=0)
+    return totaldistance
+
+def radify(column):
+    return column * np.pi / 180
 
 def smooth(data):
     dim=2

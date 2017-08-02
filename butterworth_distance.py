@@ -79,7 +79,8 @@ def smooth(data):
     smoothed_data.columns = ['lat','lon']
     return smoothed_data
    
-def main(inputfile):
+def get_distance(inputfile):
     points = get_data(inputfile)
-    smoothed_points = smooth(points)
-    return distance(smoothed_points)
+    #smoothed_points = smooth(points)
+    print('Unfiltered distance: %0.2f' % (distance(points),))
+    #return distance(points) # TO DO: calculate distance of smoothed points
