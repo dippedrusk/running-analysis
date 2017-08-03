@@ -34,4 +34,4 @@ def to_timestamp(inputdatetime):
 running_df['timestamp'] = running_df['datetime'].apply(to_timestamp)
 
 # Distance
-running_df['filename'].apply(get_distance)
+running_df['distance'] = running_df['filename'].apply(get_distance)

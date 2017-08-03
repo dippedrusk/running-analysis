@@ -34,16 +34,39 @@ def distance(data): # returns distance in m
     nextdata = pd.DataFrame([data['lat'], data['lon'], data['time']], ["nextlat", "nextlon","nexttime"])
     nextdata = nextdata.transpose().shift(periods=-1, axis=0)
     data = pd.concat([data, nextdata], axis=1)
+    data['time'] = pd.to_datetime(data['time'])
+    data['nexttime'] = pd.to_datetime(data['nexttime'])
+    data['timediff'] = data['nexttime'] - data['time']
+    data = data.drop(['nexttime', 'time'], axis=1)
     
+    radius = 6371000 # m
+    lat = radify(data['lat']).astype(np.float64)
+    lon = radify(data['lon']).astype(np.float64)
+    nextlat = radify(data['nextlat']).astype(np.float64)
+    nextlon = radify(data['nextlon']).astype(np.float64)
     
-    
-    data['distbetween'] = data.apply(distancebetween2points, axis=1)
-    totaldistance = pd.DataFrame.sum(data, axis=0)
-    return totaldistance['distbetween']
+    a = 2*radius
+    b = (np.sin((nextlat-lat)/2))**2
+    c = np.cos(lat) * np.cos(nextlat) * ((nextlon-lon)/2)**2
 
-def radify(number):
-    return number * math.pi / 180
+    data['distbetween'] = a*np.arcsin(np.sqrt(b+c))
     
+    # Want to exclude any pauses (gaps in GPS data longer than 8 seconds)
+    # and any slow running (pace greater than 0.67 s/m, same as speed
+    # less than 1.5 m/s)
+    data['pace'] = data['timediff'] / data['distbetween']
+    
+    maximumtime = pd.Timedelta(seconds=8)
+    maximumpace = pd.Timedelta(seconds=0.67)
+
+    data = data[(data['timediff'] <= maximumtime) | (data['pace'] <= maximumpace)]
+    
+    totaldistance = pd.DataFrame.sum(data['distbetween'], axis=0)
+    return totaldistance
+
+def radify(column):
+    return column * np.pi / 180
+ 
 def distancebetween2points(data): # returns distance in m
     radius = 6371000
     lat = radify(data['lat'])
@@ -57,30 +80,20 @@ def distancebetween2points(data): # returns distance in m
     return dist
 
 def smooth(data):
-    # Return Butterworth-smoothed data, eventually
-    dim=2
-    observation_stddev = 20/100000
-    transition_stddev = 10/100000
-    initial_state = data.iloc[0]
-    observation_covariance = observation_stddev**2 * np.identity(dim)
-    transition_covariance = transition_stddev**2 * np.identity(dim)
-    transition_matrix = np.identity(dim)
-    
-    kf = KalmanFilter(
-        initial_state_mean=initial_state,
-        initial_state_covariance=observation_covariance,
-        observation_covariance=observation_covariance,
-        transition_covariance=transition_covariance,
-        transition_matrices=transition_matrix
-    )
-    
-    kalman_smoothed, _ = kf.smooth(data)
-    smoothed_data = pd.DataFrame(kalman_smoothed)
-    smoothed_data.columns = ['lat','lon']
-    return smoothed_data
+    # Return Butterworth-smoothed data
+    from scipy import signal
+    b, a = signal.butter(3, 0.1)#, btype='lowpass', analog=False)
+    lat = signal.filtfilt(b, a, data['lat'])
+    lon = signal.filtfilt(b, a, data['lon'])
+    low_passed = pd.DataFrame([data['time'], lat, lon], ["time", "lat", "lon"])
+    low_passed = low_passed.transpose()
+    return low_passed
    
 def get_distance(inputfile):
     points = get_data(inputfile)
-    #smoothed_points = smooth(points)
-    print('Unfiltered distance: %0.2f' % (distance(points),))
-    #return distance(points) # TO DO: calculate distance of smoothed points
+    res = distance(points)
+    print('Before filtering: %0.2f' % res)
+    points = smooth(points)
+    res = distance(points)
+    print('After filtering: %0.2f' % res)
+    return res
