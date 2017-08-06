@@ -1,21 +1,27 @@
-# CMPT 318 Final Project
-# Author: Vasundhara Gautam
+"""
+CMPT 318 Final Project
+Author: Vasundhara Gautam
 
-# butterworth_distance.py reads in and parses a single XML file
-# at a time and returns the distance between contiguous GPS
-# coordinates smoothed using the Butterworth filter
+butterworth_distance.py reads in and parses a single XML file
+at a time and returns the distance between contiguous GPS
+coordinates smoothed using the Butterworth filter
+"""
 
 import numpy as np
 import pandas as pd
 import math
-# Imports for butterworth
+import seaborn; seaborn.set()
+from scipy import signal
+from datetime import date
 
-from statsmodels.nonparametric.smoothers_lowess import lowess
-from pykalman import KalmanFilter
 
+"""
+Parses XML file with GPS data and returns a DataFrame with latitudes,
+longitudes, and timestamps.
+"""
 def get_data(inputdata):
     from xml.dom.minidom import getDOMImplementation, parse
-    gpsdom = parse(inputdata)  # parse an XML file by name
+    gpsdom = parse(inputdata)
     gpscoords = gpsdom.getElementsByTagName("trkpt")
     time = gpsdom.getElementsByTagName("time")
     length = gpsdom.getElementsByTagName("time").length
@@ -30,8 +36,14 @@ def get_data(inputdata):
     parsed_data['time'] = pd.to_datetime(parsed_data['time'], format='%Y-%m-%dT%H:%M:%SZ')
     return parsed_data
 
-def distance(data): # returns distance in m
-    nextdata = pd.DataFrame([data['lat'], data['lon'], data['time']], ["nextlat", "nextlon","nexttime"])
+
+"""
+Returns running distance in m between points, given columns of latitude,
+longitude, and corresponding timestamps. Excludes any pauses and any walking
+or slow running
+"""
+def distance(data):
+    nextdata = pd.DataFrame([data['lat'].values, data['lon'].values, data['time'].values], ["nextlat", "nextlon","nexttime"])
     nextdata = nextdata.transpose().shift(periods=-1, axis=0)
     data = pd.concat([data, nextdata], axis=1)
     data['time'] = pd.to_datetime(data['time'])
@@ -64,36 +76,32 @@ def distance(data): # returns distance in m
     totaldistance = pd.DataFrame.sum(data['distbetween'], axis=0)
     return totaldistance
 
+
+"""
+Converts degrees of latitude and longitude to radians
+"""
 def radify(column):
     return column * np.pi / 180
- 
-def distancebetween2points(data): # returns distance in m
-    radius = 6371000
-    lat = radify(data['lat'])
-    lon = radify(data['lon'])
-    nextlat = radify(data['nextlat'])
-    nextlon = radify(data['nextlon'])
-    a = 2*radius
-    b = (math.sin((nextlat-lat)/2))**2
-    c = math.cos(lat)*math.cos(nextlat)*((nextlon-lon)/2)**2
-    dist = a*math.asin(math.sqrt(b+c))
-    return dist
 
+
+"""
+Returns Butterworth-smoothed data
+"""
 def smooth(data):
-    # Return Butterworth-smoothed data
-    from scipy import signal
-    b, a = signal.butter(3, 0.1)#, btype='lowpass', analog=False)
+    b, a = signal.butter(3, 0.3, btype='low', analog=False)
     lat = signal.filtfilt(b, a, data['lat'])
     lon = signal.filtfilt(b, a, data['lon'])
-    low_passed = pd.DataFrame([data['time'], lat, lon], ["time", "lat", "lon"])
-    low_passed = low_passed.transpose()
+    low_passed = pd.DataFrame([lat, lon], ["lat", "lon"]).transpose()
     return low_passed
-   
+
+    
+"""
+Takes a .gpx filename as input and returns the distance after smoothing
+"""
 def get_distance(inputfile):
     points = get_data(inputfile)
-    res = distance(points)
-    print('Before filtering: %0.2f' % res)
-    points = smooth(points)
-    res = distance(points)
-    print('After filtering: %0.2f' % res)
-    return res
+    latlon = pd.DataFrame([points['lat'], points['lon']]).transpose()
+    latlon_smoothed = smooth(latlon)
+    points.drop(labels=['lat', 'lon'], axis=1, inplace=True)
+    points = pd.concat([points, latlon_smoothed], axis=1)
+    return distance(points)

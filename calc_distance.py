@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from statsmodels.nonparametric.smoothers_lowess import lowess
-from pykalman import KalmanFilter
 import math
 import sys
 
@@ -70,6 +68,10 @@ def radify(column):
     return column * np.pi / 180
 
 def smooth(data):
+    
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    from pykalman import KalmanFilter
+    
     dim=2
     observation_stddev = 20/100000
     transition_stddev = 10/100000
