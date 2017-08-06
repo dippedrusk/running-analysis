@@ -12,16 +12,16 @@ import pandas as pd
 import math
 import seaborn; seaborn.set()
 from scipy import signal
-from datetime import date
+from datetime import date, datetime
+from xml.dom.minidom import getDOMImplementation, parse
 
 
 """
 Parses XML file with GPS data and returns a DataFrame with latitudes,
 longitudes, and timestamps.
 """
-def get_data(inputdata):
-    from xml.dom.minidom import getDOMImplementation, parse
-    gpsdom = parse(inputdata)
+def get_data(inputfile):
+    gpsdom = parse(inputfile)
     gpscoords = gpsdom.getElementsByTagName("trkpt")
     time = gpsdom.getElementsByTagName("time")
     length = gpsdom.getElementsByTagName("time").length
@@ -105,3 +105,19 @@ def get_distance(inputfile):
     points.drop(labels=['lat', 'lon'], axis=1, inplace=True)
     points = pd.concat([points, latlon_smoothed], axis=1)
     return distance(points)
+
+"""
+Takes a .gpx filename as input and returns the difference in minutes
+between the first and last timestamps to give the duration of exercise.
+This function does not return the duration that I was actually running
+above a certain speed, as explained in the report.
+"""
+def get_time(inputfile):
+    gpsdom = parse(inputfile)
+    gpscoords = gpsdom.getElementsByTagName("trkpt")
+    time = gpsdom.getElementsByTagName("time")
+    length = gpsdom.getElementsByTagName("time").length
+    starttime = datetime.strptime(time[0].firstChild.nodeValue, '%Y-%m-%dT%H:%M:%SZ')
+    endtime = datetime.strptime(time[length-1].firstChild.nodeValue, '%Y-%m-%dT%H:%M:%SZ')
+    timediff = endtime-starttime
+    return float(timediff.seconds/60.0) # timediff does not have a .minutes attribute
