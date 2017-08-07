@@ -19,13 +19,12 @@ Getting the data in
 Get the GPS filename list from the CSV file GPSdata.csv, parse the datetime
 strings, and create timestamps to be able to do regressions
 """
-
 running_df = pd.read_csv('GPSdata.csv', parse_dates=True, infer_datetime_format=True, encoding='utf-8')
 running_df['datetime'] = pd.to_datetime(running_df['datetime']) # Redundancy to be 200% sure this works
+# Timestamps are necessary to be able to do regressions
 def to_timestamp(inputdatetime):
     return inputdatetime.timestamp()
 running_df['timestamp'] = running_df['datetime'].apply(to_timestamp)
-
 
 """
 Getting smoothed distance for all run files and doing some preliminary
@@ -36,6 +35,7 @@ get_time = np.vectorize(get_time)
 running_df['distance'] = get_distance(running_df['filename'])
 running_df['duration'] = get_time(running_df['filename'])
 running_df['avg_speed'] = running_df['distance'] / (running_df['duration']*60.0)
+
 
 # Distance: Linear regression and graph with scatter plot and best-fit line
 fit = stats.linregress(running_df['timestamp'], running_df['distance'])
@@ -51,6 +51,7 @@ plt.xticks(rotation=40)
 plt.legend(loc=4, fontsize=14)
 plt.savefig('distance_plot.png')
 
+
 # Duration: Linear regression and graph with just a scatter plot
 fit = stats.linregress(running_df['timestamp'], running_df['duration'])
 print('The p-value of run duration over time is %.3f' % fit.pvalue)
@@ -62,6 +63,7 @@ plt.ylabel('Run duration [minutes]',fontsize=17)
 plt.title('Scatterplot of Running Duration',fontsize=19)
 plt.xticks(rotation=40)
 plt.savefig('duration_plot.png')
+
 
 # Speed: Linear regression and graph with a scatter plot and best-fit line again
 fit = stats.linregress(running_df['timestamp'], running_df['avg_speed'])
@@ -75,5 +77,16 @@ plt.title('Trend of Increased Running Speed',fontsize=19)
 plt.xticks(rotation=40)
 plt.legend(loc=4, fontsize=14)
 plt.savefig('speed_plot.png')
+
+
+"""
+Looking to see whether there is a correlation between my running speed,
+duration or distance, and weather. Hard-coded weather values in the CSV
+for temperature in °C and relative humidity in %.
+boolean values in the CSV
+for hot weather.
+"""
+
+
 
 print("Success!")
