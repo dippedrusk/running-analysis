@@ -80,11 +80,9 @@ plt.savefig('speed_plot.png')
 
 
 """
-Looking to see whether there is a correlation between my running speed,
+Looking to see whether there is a correlation between my average running speed,
 duration or distance, and weather. Hard-coded weather values in the CSV
-for temperature in °C and relative humidity in %.
-boolean values in the CSV
-for hot weather.
+for temperature in °C.
 """
 
 
