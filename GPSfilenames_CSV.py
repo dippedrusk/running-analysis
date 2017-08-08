@@ -4,8 +4,11 @@ Author: Vasundhara Gautam
 
 GPSfilenames_CSV.py is a script that goes through the current directory
 to find all the .gpx files in it and writes this list to a .csv file
-with timestamps. Run this if you want to try my analysis code out with
-your own .gpx files.
+with timestamps.
+
+Run this if you want to try my analysis code out with
+your own .gpx files. You will have to hardcode temperature values or
+comment out that part of the code in running_analysis.py.
 """
 
 import os

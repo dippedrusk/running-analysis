@@ -2,15 +2,13 @@
 CMPT 318 Final Project
 Author: Vasundhara Gautam
 
-butterworth_distance.py reads in and parses a single XML file
-at a time and returns the distance between contiguous GPS
-coordinates smoothed using the Butterworth filter
+butterworth_distance.py has functions to parse a GPX file at
+a time, smooth the coordinates using the Butterworth filter,
+and return the distance run in a given file.
 """
 
 import numpy as np
 import pandas as pd
-import math
-import seaborn; seaborn.set()
 from scipy import signal
 from datetime import date, datetime
 from xml.dom.minidom import getDOMImplementation, parse
