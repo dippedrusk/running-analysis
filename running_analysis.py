@@ -121,30 +121,19 @@ grouped = running_df.groupby('isHot')
 hotdays = grouped.get_group('Hot').reset_index(drop=True)
 nothotdays = grouped.get_group('Cool').reset_index(drop=True)
 
-# More pretty graphs
-print('Drawing pretty graphs...')
+print('Drawing pretty graphs...') # Yes, more!
 
 plt.figure()
 sns.set_palette(sns.color_palette('muted'))
-sns.lmplot('temperature', 'distance', data=running_df, fit_reg=False, hue="isHot", legend=False)
-plt.title('Average run distance and Temperature',fontsize=19)
+sns.lmplot('temperature', 'avg_speed', data=running_df, fit_reg=False, hue="isHot", legend=False)
+plt.title('Average run speed on hot and cool days',fontsize=19)
 plt.xlabel('Temperature [°C]',fontsize=17)
-plt.ylabel('Run distance [m]',fontsize=17)
+plt.ylabel('Average run speed [m/s]',fontsize=17)
 plt.legend(loc=3, fontsize=14, frameon=True)
 plt.tight_layout()
 plt.savefig('hotscatter.png')
 
 sns.set_palette(sns.light_palette('green'))
-sns.factorplot(x="isHot", y="distance", data=running_df, size=4, kind="bar")
-plt.xlabel('Temperature [°C]',fontsize=17)
-plt.ylabel('Run distance [m]',fontsize=17)
-plt.savefig('hot_distance.png')
-
-sns.factorplot(x="isHot", y="duration", data=running_df, size=4, kind="bar")
-plt.xlabel('Temperature [°C]',fontsize=17)
-plt.ylabel('Run duration [minutes]',fontsize=17)
-plt.savefig('hot_duration.png')
-
 sns.factorplot(x="isHot", y="avg_speed", data=running_df, size=4, kind="bar")
 plt.xlabel('Temperature [°C]',fontsize=17)
 plt.ylabel('Average run speed [m/s]',fontsize=17)
