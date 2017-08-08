@@ -49,7 +49,8 @@ def distance(data):
     data['timediff'] = data['nexttime'] - data['time']
     data = data.drop(['nexttime', 'time'], axis=1)
     
-    radius = 6371000 # m
+    # Formula adapted from https://en.wikipedia.org/wiki/Haversine_formula
+    radius = 6371000 # in m
     lat = radify(data['lat']).astype(np.float64)
     lon = radify(data['lon']).astype(np.float64)
     nextlat = radify(data['nextlat']).astype(np.float64)
